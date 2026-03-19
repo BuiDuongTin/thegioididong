@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Danh Sách Sản Phẩm</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-warning text-dark py-3">
+                <h4 class="mb-0">Danh sách sản phẩm</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <a href="/products/add" class="text-decoration-none fw-bold text-primary">Thêm sản phẩm mới</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-warning text-center" style="background-color: #ffd400 !important;">
+                            <tr>
+                                <th>#</th>
+                                <th>Ảnh</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Mô tả</th>
+                                <th>Danh mục</th>
+                                <th>Giá</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="product, iterStat : ${products}">
+                                <td class="text-center" th:text="${iterStat.count}">1</td>
+                                <td class="text-center">
+                                    <img th:if="${product.image != null and product.image != ''}"
+                                        th:src="@{'/images/' + ${product.image}}" alt="Ảnh sản phẩm"
+                                        style="width: 80px; height: 80px; object-fit: contain;">
+                                    <span th:unless="${product.image != null and product.image != ''}"
+                                        class="text-muted">No Image</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold" th:text="${product.name}">Tên sản phẩm</div>
+                                    <div th:if="${product.promotionType != 'NONE'}" class="badge bg-danger mt-1">KM
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted d-inline-block text-truncate" style="max-width: 150px;"
+                                        th:text="${product.description}">Mô tả</small>
+                                </td>
+                                <td th:text="${product.category != null ? product.category.name : 'Chưa có'}">Danh mục
+                                </td>
+                                <td class="fw-bold text-danger text-end"
+                                    th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                                    0 VNĐ</td>
+                                <td class="text-center">
+                                    <a th:href="@{/products/edit/{id}(id=${product.id})}"
+                                        class="text-primary text-decoration-none me-2">Sửa</a>
+                                    <a th:href="@{/products/delete/{id}(id=${product.id})}"
+                                        class="text-danger text-decoration-none"
+                                        onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">Xóa</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(products)}">
+                                <td colspan="7" class="text-center text-muted py-4">Chưa có sản phẩm nào</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

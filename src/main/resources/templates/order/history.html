@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Tra Cứu Đơn Hàng</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4 mb-5" style="max-width: 800px;">
+        <!-- Search Box -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4 text-center">
+                <h4 class="fw-bold mb-3"><i class="bi bi-search me-2 text-danger"></i>Tra Cứu Đơn Hàng</h4>
+                <p class="text-muted">Nhập số điện thoại của bạn lúc đặt hàng để xem danh sách các đơn đã lên.</p>
+
+                <form action="/order/history" method="get" class="d-flex justify-content-center mx-auto"
+                    style="max-width: 400px;">
+                    <input type="tel" name="phone" class="form-control form-control-lg me-2 border-2"
+                        placeholder="SĐT: Ví dụ 0901234567" th:value="${phone}" required>
+                    <button type="submit" class="btn btn-lg btn-danger px-4 fw-bold">Tìm kiếm</button>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${orders != null}">
+            <div th:if="${#lists.isEmpty(orders)}"
+                class="alert alert-warning text-center rounded-3 fs-5 py-4 shadow-sm border-0">
+                <i class="bi bi-emoji-frown fs-1 d-block mb-3 text-warning"></i>
+                Không tìm thấy đơn hàng nào ứng với số điện thoại <strong class="text-danger"
+                    th:text="${phone}"></strong>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(orders)}">
+                <h5 class="fw-bold mb-3">Đơn hàng của bạn (<span th:text="${#lists.size(orders)}"></span>)</h5>
+
+                <!-- Loop over Orders -->
+                <div th:each="order : ${orders}" class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <div
+                        class="card-header bg-white border-bottom pt-3 pb-3 d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success px-3 py-2 fw-medium fs-6 rounded-pill text-uppercase">Đã tiếp
+                            nhận</span>
+                        <span class="text-muted small">Khách <strong>thanh toán khi nhận hàng</strong></span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Customer Info -->
+                        <div class="row px-2 mb-3 pb-3">
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <p class="mb-1"><i class="bi bi-person ms-1 me-2 text-muted"></i><strong
+                                        th:text="${order.customerName}"></strong></p>
+                                <p class="mb-1"><i class="bi bi-telephone ms-1 me-2 text-muted"></i><span
+                                        th:text="${order.phoneNumber}"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><i class="bi bi-geo-alt ms-1 me-2 text-muted"></i><span
+                                        th:text="${order.shippingAddress}"></span></p>
+                                <p class="mb-0" th:if="${order.note != null and !order.note.isEmpty()}"><i
+                                        class="bi bi-chat-text ms-1 me-2 text-muted"></i><span
+                                        class="fst-italic text-secondary" th:text="${order.note}"></span></p>
+                            </div>
+                        </div>
+
+                        <div class="bg-light p-3 rounded-3 border">
+                            <!-- Items -->
+                            <div th:each="detail, stat : ${order.orderDetails}" class="d-flex align-items-center"
+                                th:classappend="${!stat.last ? 'mb-3 pb-3 border-bottom' : ''}">
+                                <div style="width: 70px; height: 70px; background: #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden;"
+                                    class="me-3 border flex-shrink-0">
+                                    <img th:if="${detail.product != null and detail.product.image != null and detail.product.image != ''}"
+                                        th:src="@{'/images/' + ${detail.product.image}}"
+                                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                    <i th:unless="${detail.product != null and detail.product.image != null and detail.product.image != ''}"
+                                        class="bi bi-box fs-3 text-secondary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-bold text-dark"
+                                        th:text="${detail.product != null ? detail.product.name : 'Sản phẩm đã bị xóa'}">
+                                    </h6>
+                                    <span class="text-muted small d-inline-block px-2 py-1 bg-white border rounded">SL:
+                                        <span th:text="${detail.quantity}" class="fw-bold"></span></span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fs-6 fw-bold text-dark"
+                                        th:text="${#numbers.formatDecimal(detail.price * detail.quantity, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grand Total -->
+                        <div class="d-flex justify-content-between pt-3 mt-3 align-items-center">
+                            <span class="text-muted">Tổng thành tiền:</span>
+                            <span class="fs-4 fw-bold text-danger"
+                                th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

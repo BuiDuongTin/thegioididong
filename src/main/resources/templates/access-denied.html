@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Không có quyền truy cập</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-shield-lock-fill text-danger" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-2">Bạn không có quyền truy cập</h4>
+                        <p class="text-muted mb-4">
+                            Tài khoản hiện tại không được phép truy cập trang này.
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="/products" class="btn btn-primary">Quay về trang sản phẩm</a>
+                            <a href="/login" class="btn btn-outline-secondary">Đăng nhập bằng tài khoản khác</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

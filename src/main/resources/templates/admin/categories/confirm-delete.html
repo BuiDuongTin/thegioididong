@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout}">
+
+<head>
+    <title>Xác nhận xóa danh mục</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h4 class="fw-bold mb-3 text-danger">Xác nhận xóa danh mục</h4>
+                        <p>Bạn có chắc muốn xóa danh mục sau không?</p>
+
+                        <div class="mb-3">
+                            <strong th:text="${category.name}">Tên danh mục</strong>
+                            <div class="text-muted" th:text="${category.description}">Mô tả</div>
+                        </div>
+
+                        <form th:action="@{/admin/categories/delete/{id}(id=${category.id})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-danger">Xóa ngay</button>
+                                <a href="/admin/categories" class="btn btn-outline-secondary">Hủy</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

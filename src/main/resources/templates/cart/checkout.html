@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Thanh toán</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-3">
+        <h3>Thông tin đặt hàng</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <form th:action="@{/order/submit}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="mb-3">
+                        <label class="form-label">Tên người nhận:</label>
+                        <input type="text" name="customerName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Địa chỉ giao hàng:</label>
+                        <input type="text" name="shippingAddress" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại:</label>
+                        <input type="text" name="phoneNumber" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú:</label>
+                        <textarea name="note" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Hình thức thanh toán:</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="payCOD" value="COD" checked>
+                            <label class="form-check-label" for="payCOD">
+                                Thanh toán khi nhận hàng (COD)
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="payMomo" value="MOMO">
+                            <label class="form-check-label" for="payMomo">
+                                Thanh toán bằng ví MoMo
+                                <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" width="20" class="ms-1 rounded">
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Xác nhận đặt hàng</button>
+                    <a href="/cart" class="btn btn-secondary">Quay lại</a>
+                </form>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

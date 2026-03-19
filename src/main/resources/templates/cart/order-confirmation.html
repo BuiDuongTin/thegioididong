@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Đặt hàng thành công</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-5 mb-5 d-flex justify-content-center">
+        <div class="text-center" style="max-width: 650px; width: 100%;">
+            <!-- Icon Success Thẩm mỹ -->
+            <div class="mb-4 d-inline-flex justify-content-center align-items-center bg-success bg-opacity-10 rounded-circle"
+                style="width: 80px; height: 80px;">
+                <i class="bi bi-check-lg text-success" style="font-size: 3rem;"></i>
+            </div>
+
+            <h3 class="fw-bold mb-3">Cảm ơn bạn đã đặt hàng!</h3>
+            <p class="text-muted mb-4">
+                Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.<br>
+                Chúng tôi sẽ sớm liên hệ với bạn để xác nhận thông tin giao hàng.
+            </p>
+
+            <!-- Card Thông tin đơn hàng -->
+            <div class="card border-0 shadow-sm text-start rounded-4 mt-4" th:if="${order != null}">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between border-bottom pb-3 mb-3">
+                        <span class="fw-bold fs-5">Mã đơn hàng: #<span th:text="${order.id}"></span></span>
+                        <span class="text-muted small"
+                            th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy HH:mm')}">10/03/2026
+                            10:22</span>
+                    </div>
+
+                    <div class="row g-3 mb-2">
+                        <div class="col-6">
+                            <span class="text-muted small text-uppercase fw-bold">Người nhận</span>
+                            <div class="fw-bold fs-6 mt-1" th:text="${order.customerName}">Nguyễn Văn A</div>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted small text-uppercase fw-bold">Số điện thoại</span>
+                            <div class="fw-bold fs-6 mt-1" th:text="${order.phoneNumber}">0987654321</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <span class="text-muted small text-uppercase fw-bold">Địa chỉ</span>
+                            <div class="fw-bold mt-1" th:text="${order.shippingAddress}">123 Đường ABC, Quận 1, TP HCM
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted small text-uppercase fw-bold">Thanh Toán</span>
+                            <div class="fw-bold fs-6 mt-1">
+                                <span th:if="${order.paymentMethod == 'MOMO'}" class="text-uppercase">Ví MOMO</span>
+                                <span th:if="${order.paymentMethod == 'COD'}" class="text-uppercase">Tiền Mặt
+                                    (COD)</span>
+                                <span th:if="${order.paymentMethod == 'BANK_TRANSFER'}" class="text-uppercase">Chuyển
+                                    Khoản</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <span class="text-muted small text-uppercase fw-bold">Điểm Tích Lũy</span>
+                            <div class="fw-bold mt-1 text-warning fs-6">
+                                +<span th:text="${order.earnedPoints}">100</span> điểm
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút điều hướng -->
+            <div class="mt-5 mb-5 d-flex gap-3 justify-content-center">
+                <a href="/products" class="btn btn-outline-secondary px-5 py-3 fw-bold rounded-3">Tiếp tục mua sắm</a>
+                <a href="/order/history" class="btn btn-primary px-5 py-3 fw-bold rounded-3 border-0"
+                    style="background: #288ad6;">Theo dõi đơn hàng</a>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

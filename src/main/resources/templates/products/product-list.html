@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" layout:decorate="~{layout}">
+
+<head>
+    <title>Danh Sách Sản Phẩm</title>
+    <link rel="stylesheet" href="/css/style.css?v=4">
+    <style>
+        .product-card img,
+        .product-card-flash img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .product-card .img-wrap img,
+        .product-card-flash .img-wrap img {
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+    <body>
+    <section layout:fragment="content" class="container mt-4">
+        <div class="d-flex justify-content-end mb-3" sec:authorize="hasAnyAuthority('ROLE_ADMIN','ROLE_MANAGER')">
+            <a href="/products/add" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Thêm sản phẩm
+            </a>
+        </div>
+
+        <!-- Flash Sale Section -->
+        <div class="flash-sale-section">
+            <div class="flash-sale-header">
+                <div class="flash-sale-title">
+                    <i class="bi bi-lightning-fill text-warning"></i> Khuyến mãi online
+                </div>
+                <div class="flash-sale-timer">
+                    <span>Kết thúc trong:</span>
+                    <span class="timer-box" id="t-h">00</span> :
+                    <span class="timer-box" id="t-m">00</span> :
+                    <span class="timer-box" id="t-s">00</span>
+                </div>
+            </div>
+            <div class="row row-cols-2 row-cols-md-5 g-2">
+                <div class="col" th:each="product, iterStat : ${promotionProducts}" th:if="${iterStat.index < 5}">
+                    <div class="product-card-flash" style="position:relative;">
+                        <span class="badge-promotion">
+                            <i class="bi bi-lightning-fill"></i>
+                            -<span th:text="${product.discountPercent > 0 ? product.discountPercent : 10}">10</span>%
+                        </span>
+                        <a th:href="@{/products/detail/{id}(id=${product.id})}">
+                            <div class="img-wrap">
+                                <img th:if="${product.image != null and product.image != ''}"
+                                    th:src="@{'/images/' + ${product.image}}" alt="Product">
+                                <img th:unless="${product.image != null and product.image != ''}"
+                                    src="https://via.placeholder.com/200" alt="No Image">
+                            </div>
+                        </a>
+                        <a th:href="@{/products/detail/{id}(id=${product.id})}" class="text-decoration-none">
+                            <h3 th:text="${product.name}">Tên sản phẩm</h3>
+                        </a>
+                        <div class="price-box">
+                            <span class="price"
+                                th:text="${#numbers.formatDecimal(product.price * (1 - (product.discountPercent > 0 ? product.discountPercent : 10) / 100.0), 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            <span class="price-old"
+                                th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-text" th:text="'Chỉ còn ' + ${product.stockQuantity} + ' sản phẩm'">
+                            </div>
+                            <div class="progress-fill"
+                                th:style="'width: ' + (${product.stockQuantity} * 100 / 20) + '%; max-width: 100%;'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fallback nếu chưa có sản phẩm khuyến mãi -->
+                <div class="col" th:if="${#lists.isEmpty(promotionProducts)}">
+                    <p class="text-white-50 small">Chưa có sản phẩm khuyến mãi.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Tab Bar -->
+        <div class="product-tabs mt-4">
+            <button class="product-tab-btn active" onclick="switchTab('all', this)" id="tab-all">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Tất cả
+                <span class="tab-badge" th:text="${#lists.size(products)}">0</span>
+            </button>
+            <button class="product-tab-btn" onclick="switchTab('promo', this)" id="tab-promo">
+                <i class="bi bi-lightning-fill"></i> Khuyến mãi
+                <span class="tab-badge" th:text="${#lists.size(promotionProducts)}">0</span>
+            </button>
+        </div>
+
+        <!-- Tab: Tất cả sản phẩm -->
+        <div class="tab-panel active" id="panel-all">
+            <h4 class="mb-3 text-uppercase fw-bold text-white">
+                <i class="bi bi-grid me-2"></i>Gợi ý cho bạn
+            </h4>
+            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
+                <div class="col" th:each="product : ${products}">
+                    <div class="product-card h-100" style="position:relative;">
+                        <!-- Badge khuyến mãi nếu sản phẩm đang KM -->
+                        <span class="badge-promotion" th:if="${product.isPromotion}">
+                            <i class="bi bi-lightning-fill"></i> KM
+                        </span>
+                        <span class="installment" th:unless="${product.isPromotion}">Trả góp 0%</span>
+
+                        <a th:href="@{/products/detail/{id}(id=${product.id})}">
+                            <div class="img-wrap">
+                                <img th:if="${product.image != null and product.image != ''}"
+                                    th:src="@{'/images/' + ${product.image}}" alt="Product">
+                                <img th:unless="${product.image != null and product.image != ''}"
+                                    src="https://via.placeholder.com/200" alt="No Image">
+                            </div>
+                        </a>
+
+                        <a th:href="@{/products/detail/{id}(id=${product.id})}" class="text-decoration-none">
+                            <h3 th:text="${product.name}">Tên sản phẩm</h3>
+                        </a>
+
+                        <div class="price-box mb-2">
+                            <!-- Giá sau giảm nếu có KM -->
+                            <span class="price" th:if="${product.isPromotion and product.discountPercent > 0}"
+                                th:text="${#numbers.formatDecimal(product.price * (1 - product.discountPercent / 100.0), 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            <span class="price" th:unless="${product.isPromotion and product.discountPercent > 0}"
+                                th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            <span class="price-old" th:if="${product.isPromotion}"
+                                th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            <span class="text-danger small fw-bold"
+                                th:if="${product.isPromotion and product.discountPercent > 0}"
+                                th:text="'-' + ${product.discountPercent} + '%'"></span>
+                        </div>
+
+                        <div class="rating">
+                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-half"></i>
+                            <span class="text-secondary ms-1">(15)</span>
+                        </div>
+
+                        <div class="mb-2">
+                            <span class="text-muted small"
+                                th:text="'Chỉ còn ' + ${product.stockQuantity} + ' sản phẩm'"></span>
+                        </div>
+
+                        <div class="d-flex gap-2 mb-2">
+                            <a th:href="@{/cart/add-stay/{id}(id=${product.id})}"
+                                class="btn btn-outline-danger btn-sm flex-fill d-flex align-items-center justify-content-center"
+                                title="Thêm vào giỏ hàng">
+                                <i class="bi bi-cart-plus fs-5"></i>
+                            </a>
+                            <a th:href="@{/cart/add/{id}(id=${product.id})}" class="btn-buy-now flex-fill m-0 w-100">MUA
+                                NGAY</a>
+                        </div>
+
+                        <!-- Product management actions -->
+                        <div class="mt-2 d-flex justify-content-between border-top pt-2"
+                            sec:authorize="hasAnyAuthority('ROLE_ADMIN','ROLE_MANAGER')">
+                            <a th:href="@{/products/edit/{id}(id=${product.id})}"
+                                class="text-primary small text-decoration-none">
+                                <i class="bi bi-pencil"></i> Sửa
+                            </a>
+                            <a th:href="@{/products/delete/{id}(id=${product.id})}"
+                                class="text-danger small text-decoration-none">
+                                <i class="bi bi-trash"></i> Xóa
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Chỉ sản phẩm Khuyến mãi -->
+        <div class="tab-panel" id="panel-promo">
+            <h4 class="mb-3 text-uppercase fw-bold text-warning">
+                <i class="bi bi-lightning-fill me-2"></i>Sản phẩm đang khuyến mãi
+            </h4>
+            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
+                <div class="col" th:each="product : ${promotionProducts}">
+                    <div class="product-card h-100" style="position:relative;">
+                        <span class="badge-promotion">
+                            <i class="bi bi-lightning-fill"></i>
+                            -<span th:text="${product.discountPercent}">0</span>%
+                        </span>
+
+                        <a th:href="@{/products/detail/{id}(id=${product.id})}">
+                            <div class="img-wrap">
+                                <img th:if="${product.image != null and product.image != ''}"
+                                    th:src="@{'/images/' + ${product.image}}" alt="Product">
+                                <img th:unless="${product.image != null and product.image != ''}"
+                                    src="https://via.placeholder.com/200" alt="No Image">
+                            </div>
+                        </a>
+
+                        <a th:href="@{/products/detail/{id}(id=${product.id})}" class="text-decoration-none">
+                            <h3 th:text="${product.name}">Tên sản phẩm</h3>
+                        </a>
+
+                        <div class="price-box mb-2">
+                            <span class="price"
+                                th:text="${#numbers.formatDecimal(product.price * (1 - product.discountPercent / 100.0), 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            <span class="price-old"
+                                th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            <span class="text-danger small fw-bold"
+                                th:text="'-' + ${product.discountPercent} + '%'"></span>
+                        </div>
+
+                        <div class="rating">
+                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-half"></i>
+                        </div>
+
+                        <div class="mb-2">
+                            <span class="text-muted small"
+                                th:text="'Chỉ còn ' + ${product.stockQuantity} + ' sản phẩm'"></span>
+                        </div>
+
+                        <div class="d-flex gap-2 mb-2">
+                            <a th:href="@{/cart/add-stay/{id}(id=${product.id})}"
+                                class="btn btn-outline-danger btn-sm flex-fill d-flex align-items-center justify-content-center"
+                                title="Thêm vào giỏ hàng">
+                                <i class="bi bi-cart-plus fs-5"></i>
+                            </a>
+                            <a th:href="@{/cart/add/{id}(id=${product.id})}" class="btn-buy-now flex-fill m-0 w-100">MUA
+                                NGAY</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 text-center py-4 text-white-50" th:if="${#lists.isEmpty(promotionProducts)}">
+                    <i class="bi bi-emoji-smile fs-2"></i>
+                    <p class="mt-2">Hiện chưa có sản phẩm khuyến mãi.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab switching + countdown JS - MUST be inside fragment -->
+        <script>
+            function switchTab(tabName, btn) {
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.product-tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('panel-' + tabName).classList.add('active');
+                btn.classList.add('active');
+            }
+
+            // Countdown timer
+            function startTimer() {
+                const now = new Date();
+                const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                function update() {
+                    const diff = Math.max(0, Math.floor((endOfDay - new Date()) / 1000));
+                    const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+                    const eh = document.getElementById('t-h');
+                    const em = document.getElementById('t-m');
+                    const es = document.getElementById('t-s');
+                    if (eh) eh.textContent = String(h).padStart(2, '0');
+                    if (em) em.textContent = String(m).padStart(2, '0');
+                    if (es) es.textContent = String(s).padStart(2, '0');
+                }
+                update();
+                setInterval(update, 1000);
+            }
+            document.addEventListener('DOMContentLoaded', startTimer);
+        </script>
+
+    </section>
+</body>
+
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title th:text="${product.name} + ' - TheGioiDiDong'">Chi Tiết Sản Phẩm</title>
+    <style>
+        .product-detail-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-img {
+            max-height: 500px;
+            object-fit: contain;
+            width: 100%;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .product-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            font-size: 28px;
+            color: #cd1818;
+            font-weight: bold;
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: #777;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .btn-buy-lg {
+            background: #cd1818;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: none;
+            text-transform: uppercase;
+        }
+
+        .btn-buy-lg:hover {
+            background: #a50e0e;
+            color: #fff;
+        }
+
+        .btn-cart-lg {
+            border: 2px solid #cd1818;
+            color: #cd1818;
+            background: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .btn-cart-lg:hover {
+            background: #fdf2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-dark">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="/products" class="text-decoration-none text-dark">Điện thoại</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${product.name}">Samsung S24</li>
+            </ol>
+        </nav>
+
+        <div class="product-detail-container mb-5">
+            <div class="row">
+                <!-- Left: Large Image -->
+                <div class="col-md-5">
+                    <img th:if="${product.image != null and product.image != ''}"
+                        th:src="@{'/images/' + ${product.image}}" class="detail-img" alt="Product Image">
+                    <img th:unless="${product.image != null and product.image != ''}"
+                        src="https://via.placeholder.com/500" class="detail-img" alt="No Image">
+                </div>
+
+                <!-- Right: Product Info -->
+                <div class="col-md-7">
+                    <h1 class="product-name" th:text="${product.name}">Samsung Galaxy S24 Ultra 5G</h1>
+
+                    <div class="mb-3">
+                        <span class="status-badge" th:if="${product.stockQuantity > 0}">
+                            <i class="bi bi-check-circle-fill text-success"></i> Còn hàng (<span
+                                th:text="${product.stockQuantity}"></span>)
+                        </span>
+                        <span class="status-badge bg-danger text-white" th:unless="${product.stockQuantity > 0}">
+                            <i class="bi bi-x-circle-fill"></i> Hết hàng
+                        </span>
+                        <span class="ms-2 text-warning"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i
+                                class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i
+                                class="bi bi-star-fill"></i> (15 đánh giá)</span>
+                    </div>
+
+                    <div class="card bg-light border-0 p-3 mb-4">
+                        <div class="d-flex align-items-end">
+                            <!-- Hiển thị giá đã giảm nếu có Giảm Giá -->
+                            <span class="product-price"
+                                th:if="${product.promotionType == 'DISCOUNT' and product.discountPercent > 0}"
+                                th:text="${#numbers.formatDecimal(product.price * (1 - product.discountPercent / 100.0), 0, 'COMMA', 0, 'POINT')} + '₫'">25.000.000₫</span>
+
+                            <!-- Hiển thị giá gốc (NẾU CÓ giảm giá thì gạch chéo, CÒN KHÔNG thì viết đậm bình thường) -->
+                            <span
+                                th:class="${product.promotionType == 'DISCOUNT' and product.discountPercent > 0} ? 'old-price' : 'product-price'"
+                                th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '₫'">28.000.000₫</span>
+
+                            <!-- Badge giảm giá -->
+                            <span class="ms-2 badge bg-danger"
+                                th:if="${product.promotionType == 'DISCOUNT' and product.discountPercent > 0}"
+                                th:text="'-' + ${product.discountPercent} + '%'">-10%</span>
+                        </div>
+
+                        <!-- Quà tặng kèm -->
+                        <p class="mb-0 mt-3 text-secondary"
+                            th:if="${product.promotionType == 'GIFT' and product.giftDescription != null and product.giftDescription != ''}">
+                            <i class="bi bi-gift-fill text-danger"></i>
+                            <span th:text="${product.giftDescription}">Tặng suất mua đồng hồ giảm 40%.</span>
+                        </p>
+                    </div>
+
+                    <!-- Specs Preview (Mock) -->
+                    <div class="mb-4">
+                        <strong>Cấu hình dự kiến:</strong>
+                        <ul class="list-unstyled mt-2 small text-secondary">
+                            <li><i class="bi bi-cpu"></i> Chip: Snapdragon 8 Gen 3 for Galaxy</li>
+                            <li><i class="bi bi-memory"></i> RAM: 12 GB</li>
+                            <li><i class="bi bi-sd-card"></i> Dung lượng: 256 GB</li>
+                            <li><i class="bi bi-camera"></i> Camera sau: 200 MP + 50 MP + 12 MP + 10 MP</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row g-2" th:if="${product.stockQuantity > 0}">
+                        <div class="col-md-6">
+                            <a th:href="@{/cart/add/{id}(id=${product.id})}">
+                                <button class="btn-buy-lg">Mua Ngay <br><span class="small fw-normal text-white-50">Giao
+                                        tận nơi hoặc nhận tại siêu thị</span></button>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a th:href="@{/cart/add/{id}(id=${product.id})}">
+                                <button class="btn-cart-lg"><i class="bi bi-cart-plus"></i> Thêm vào giỏ</button>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger" th:unless="${product.stockQuantity > 0}">
+                        Sản phẩm đã hết hàng. Vui lòng quay lại sau!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description (Optional) -->
+        <div class="bg-white p-3 rounded shadow-sm mb-5">
+            <h4 class="fw-bold fs-5">Thông tin sản phẩm</h4>
+            <hr>
+            <p th:text="${product.description}">Mô tả chi tiết sản phẩm sẽ hiển thị ở đây.</p>
+        </div>
+    </section>
+</body>
+
+</html>

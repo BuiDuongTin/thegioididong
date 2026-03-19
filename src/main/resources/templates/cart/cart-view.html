@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Giỏ hàng của bạn</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-3 mb-5"
+        style="max-width: 600px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 0; overflow: hidden;">
+        <!-- Tab Headers (Thẩm mỹ UI như TGDD) -->
+        <div class="d-flex w-100 border-bottom" style="background: #f8f9fa;">
+            <div class="flex-fill text-center py-3 fw-bold"
+                style="background: #fff; border-bottom: 2px solid #cb1c22; color: #cb1c22; cursor: pointer;">
+                <i class="bi bi-truck me-2"></i> Giao tận nơi
+            </div>
+            <div class="flex-fill text-center py-3 text-secondary" style="cursor: pointer;">
+                <i class="bi bi-shop me-2"></i> Nhận tại siêu thị
+            </div>
+        </div>
+
+        <div class="p-4">
+            <h5 class="fw-bold mb-4">Giỏ hàng của bạn</h5>
+
+            <div th:if="${cartItems.isEmpty()}" class="alert alert-info text-center py-5">
+                <i class="bi bi-cart-x text-muted mb-3" style="font-size: 3rem;"></i><br>
+                Giỏ hàng trống. <a href="/products" class="fw-bold text-danger text-decoration-none">Mua sắm ngay</a>
+            </div>
+
+            <div th:unless="${cartItems.isEmpty()}">
+                <!-- Danh sách sản phẩm (Layout TGDD Mobile) -->
+                <div class="cart-items-list mb-4">
+                    <div th:each="item : ${cartItems}" class="d-flex border-bottom pb-3 mb-3 position-relative">
+                        <!-- Cột ảnh -->
+                        <div class="me-3" style="width: 100px;">
+                            <img th:if="${item.image != null and item.image != ''}"
+                                th:src="@{'/images/' + ${item.image}}" alt="Product" class="img-fluid rounded">
+                            <img th:unless="${item.image != null and item.image != ''}"
+                                src="https://via.placeholder.com/100" alt="No Image" class="img-fluid rounded">
+                            <form th:action="@{/cart/update}" method="post" class="mt-2 text-center"
+                                style="display: none;" th:id="'form-del-' + ${item.productId}">
+                                <input type="hidden" name="productId" th:value="${item.productId}" />
+                                <input type="hidden" name="quantity" value="0" />
+                            </form>
+                            <a href="javascript:void(0);"
+                                th:onclick="'document.getElementById(\'form-del-' + ${item.productId} + '\').submit();'"
+                                class="text-secondary small text-decoration-none d-block mt-2 text-center"><i
+                                    class="bi bi-x-circle"></i> Xóa</a>
+                        </div>
+                        <!-- Cột thông tin -->
+                        <div class="flex-fill">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="fw-bold text-dark mb-1" style="font-size: 15px;" th:text="${item.name}">Tên
+                                    sản phẩm</h6>
+                                <span class="fw-bold text-danger"
+                                    th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + '₫'"></span>
+                            </div>
+                            <div class="text-muted small mb-3">Màu: Mặc định</div>
+
+                            <!-- Box số lượng -->
+                            <div class="d-flex justify-content-between align-items-end">
+                                <div class="badge bg-light text-dark fw-normal border">1 Khuyến mãi <i
+                                        class="bi bi-chevron-down"></i></div>
+
+                                <form th:action="@{/cart/update}" method="post"
+                                    class="d-flex align-items-center border rounded bg-white" style="width: 100px;">
+                                    <input type="hidden" name="productId" th:value="${item.productId}" />
+                                    <button type="button"
+                                        class="btn btn-sm btn-link text-dark text-decoration-none border-0 py-0 px-2"
+                                        style="font-size: 18px;"
+                                        onclick="this.parentNode.querySelector('input[type=number]').stepDown(); this.parentNode.submit();">−</button>
+                                    <input type="number" name="quantity"
+                                        class="form-control form-control-sm border-0 text-center px-0 fs-6"
+                                        th:value="${item.quantity}" min="1" onchange="this.form.submit()"
+                                        style="box-shadow: none;" />
+                                    <button type="button"
+                                        class="btn btn-sm btn-link text-dark text-decoration-none border-0 py-0 px-2"
+                                        style="font-size: 18px;"
+                                        onclick="this.parentNode.querySelector('input[type=number]').stepUp(); this.parentNode.submit();">+</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cục tính toán mới (Điểm, Khuyến mãi, Freeship) -->
+                <div class="card shadow-sm mb-4 border-0 rounded-4" style="background: #f8f9fa;">
+                    <div class="card-body">
+                        <!-- Box nhập mã giảm giá -->
+                        <div class="mb-4">
+                            <label class="fw-bold mb-2">Mã ưu đãi</label>
+                            <div class="input-group">
+                                <input type="text" id="discount-code" class="form-control"
+                                    placeholder="Nhập mã (Gợi ý: SALE50)">
+                                <button class="btn btn-dark px-4" type="button" onclick="applyDiscount()">Áp
+                                    dụng</button>
+                            </div>
+                            <small id="discount-msg" class="d-block mt-2"></small>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-3 text-secondary">
+                            <span>Tổng tiền hàng (<span th:text="${cartCount}"></span> SP):</span>
+                            <span id="subtotal" class="fw-bold text-dark" th:text="${totalPrice} + '₫'">0đ</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-3 text-secondary">
+                            <span>Chiết khấu:</span>
+                            <span id="discount-amount" class="text-success fw-bold">-0đ</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-1 text-secondary">
+                            <span>Phí giao hàng:</span>
+                            <span id="shipping-fee" class="fw-bold text-dark">30.000đ</span>
+                        </div>
+
+                        <!-- Thông báo Free Ship -->
+                        <div class="mb-3">
+                            <span class="text-info small" id="free-ship-msg">Đang tính phí vận chuyển...</span>
+                        </div>
+
+                        <hr class="text-muted">
+
+                        <!-- Box Điểm tích lũy -->
+                        <div class="mb-2 bg-white p-3 rounded-3 border border-warning">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <span class="small mb-1">
+                                    Điểm khả dụng: <strong class="text-warning fs-5" id="user-points">0</strong>
+                                </span>
+                                <!-- Nút dùng điểm -->
+                                <button id="btn-use-points" class="btn btn-sm btn-warning fw-bold d-none"
+                                    onclick="usePoints()">
+                                    Dùng 10 điểm (-10k Ship)
+                                </button>
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;" id="earn-points-msg">
+                                (Nhập Số Điện Thoại để tra cứu điểm tích lũy)
+                            </small>
+                        </div>
+
+                        <hr class="text-muted">
+
+                        <div class="d-flex justify-content-between mb-1 align-items-center">
+                            <span class="text-muted fw-bold">TỔNG THANH TOÁN:</span>
+                            <span id="final-total" class="text-danger fs-4 fw-bold">0đ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nút Tiến hành đặt hàng (Chuyển tiếp) -->
+                <button type="button" id="btn-proceed-checkout"
+                    class="btn w-100 fw-bold fs-5 text-white py-3 rounded-3 mb-3"
+                    style="background-color: #cb1c22; text-transform: uppercase;"
+                    onclick="document.getElementById('checkout-form').style.display='block'; this.style.display='none';">
+                    Tiến hành đặt hàng
+                </button>
+
+                <!-- Form thông tin đặt hàng -->
+                <div id="checkout-form" style="display: none;" class="mt-4 border-top pt-4">
+                    <h5 class="fw-bold mb-3">Thông tin khách hàng</h5>
+                    <form th:action="@{/order/submit}" method="post">
+                        <!-- Cấp biến Backend Checkout -->
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <input type="hidden" name="discountCode" id="form-discount-code" value="">
+                        <input type="hidden" name="usePoints" id="form-use-points" value="false">
+
+                        <div class="d-flex gap-3 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="gender" id="genderMale" checked>
+                                <label class="form-check-label" for="genderMale">Anh</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="gender" id="genderFemale">
+                                <label class="form-check-label" for="genderFemale">Chị</label>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <input type="text" name="customerName" class="form-control p-3" placeholder="Họ và tên"
+                                    required>
+                            </div>
+                            <div class="col-md-6">
+                                <input th:if="${loggedInPhone != null}" type="tel" name="phoneNumber" id="phoneNumber"
+                                    class="form-control p-3" placeholder="Số điện thoại" required
+                                    th:value="${loggedInPhone}" onblur="fetchPoints(this.value)">
+                                <input th:unless="${loggedInPhone != null}" type="tel" name="phoneNumber"
+                                    id="phoneNumber" class="form-control p-3" placeholder="Số điện thoại" required
+                                    onblur="fetchPoints(this.value)">
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold mb-3 mt-4">Thông tin nhận hàng</h5>
+                        <div class="mb-3">
+                            <input type="text" name="shippingAddress" class="form-control p-3"
+                                placeholder="Nhập địa chỉ nhận hàng (Số nhà, đường...)" required>
+                        </div>
+                        <div class="mb-4">
+                            <input type="text" name="note" class="form-control p-3"
+                                placeholder="Yêu cầu khác (không bắt buộc)">
+                        </div>
+
+                        <!-- Hình thức thanh toán mới theo Mockup -->
+                        <div class="card border-0 shadow-sm mt-4 mb-3">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3">Hình thức thanh toán</h6>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input mt-1" type="radio" name="paymentMethod" id="payCOD"
+                                        value="COD" checked>
+                                    <label class="form-check-label d-flex align-items-center" for="payCOD">
+                                        Thanh toán khi nhận hàng (COD)
+                                    </label>
+                                </div>
+                                <hr class="text-muted opacity-50 my-2">
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input mt-1" type="radio" name="paymentMethod" id="payBank"
+                                        value="BANK_TRANSFER">
+                                    <label class="form-check-label d-flex align-items-center" for="payBank">
+                                        Chuyển khoản ngân hàng
+                                    </label>
+                                </div>
+                                <hr class="text-muted opacity-50 my-2">
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input mt-1" type="radio" name="paymentMethod" id="payMomo"
+                                        value="MOMO">
+                                    <label class="form-check-label d-flex align-items-center" for="payMomo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
+                                            width="20" class="rounded me-2"> MoMo
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox Đồng ý chính sách -->
+                        <div class="form-check mb-4 ms-2">
+                            <input class="form-check-input" type="checkbox" id="agreePolicy" required>
+                            <label class="form-check-label small" for="agreePolicy">
+                                Tôi đồng ý với <a href="#" class="text-primary text-decoration-none">Chính sách xử lý dữ
+                                    liệu cá nhân</a>
+                            </label>
+                        </div>
+
+                        <!-- Thay thế Nút Đặt Hàng thuần bằng nút Chung Điều Hướng -->
+                        <button type="button" onclick="processCheckout()"
+                            class="btn w-100 fw-bold fs-5 text-white py-3 rounded-3 mt-1 d-flex justify-content-center align-items-center"
+                            style="background-color: #f37021; text-transform: uppercase;">
+                            ĐẶT HÀNG
+                        </button>
+                        <!-- Nút Submit thật sẽ bị ẩn đi, chỉ kích hoạt khi Xác nhận thanh toán ở Modal hoặc khi trả tiền mặt -->
+                        <button type="submit" id="real-submit-btn" class="d-none">Submit</button>
+
+                        <div class="text-center mt-3 small text-muted">
+                            <i class="bi bi-shield-check text-success"></i> Thanh toán an toàn, bảo mật
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- ================= JAVASCRIPT ĐIỀU CHỈNH LOGIC Checkout ================= -->
+            <script th:inline="javascript">
+                /*<![CDATA[*/
+                let subtotal = /*[[${totalPrice}]]*/ 0;
+                let totalQty = /*[[${cartCount}]]*/ 0;
+
+                let discountValue = 0;              // Chiết khấu từ mã
+                let baseShippingFee = 30000;        // Phí ship mặc định 30k
+                let pointsUsed = false;             // Check đã trừ điểm chưa
+                let accumulatedPoints = /*[[${loggedInPoints} ?: 0]]*/ 0; // Điểm cũ kéo từ DB
+                let userPoints = 0;
+                let autoUsePoints = new URLSearchParams(window.location.search).get('usePoints') === 'true';
+
+                const formatCurrency = (amount) => {
+                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace('₫', '') + '₫';
+                };
+
+                function calculateCheckout() {
+                    document.getElementById('subtotal').innerText = formatCurrency(subtotal);
+                    document.getElementById('discount-amount').innerText = '-' + formatCurrency(discountValue);
+
+                    // userPoints được gán bằng điểm tích lũy kéo về từ Hệ thống
+                    userPoints = accumulatedPoints;
+                    if (autoUsePoints && userPoints >= 10 && !pointsUsed) {
+                        pointsUsed = true;
+                        autoUsePoints = false;
+                    } else if (autoUsePoints && userPoints < 10) {
+                        autoUsePoints = false;
+                    }
+                    document.getElementById('user-points').innerText = Math.max(0, userPoints - (pointsUsed ? 10 : 0));
+
+                    // Hiển thị phần dự kiến cộng điểm sau đơn này
+                    const earnedThisOrder = Math.floor(subtotal / 7500);
+                    document.getElementById('earn-points-msg').innerText = `+${earnedThisOrder} điểm sẽ được cộng tích lũy sau khi hoàn tất đơn này.`;
+
+                    const btnPoints = document.getElementById('btn-use-points');
+                    if (userPoints >= 10 && !pointsUsed) {
+                        btnPoints.classList.remove('d-none');
+                    } else {
+                        btnPoints.classList.add('d-none');
+                    }
+
+                    let currentShip = baseShippingFee;
+                    const freeShipMsg = document.getElementById('free-ship-msg');
+
+                    // Condition matching OrderService DB logic
+                    if (subtotal > 1000000 && totalQty >= 2) {
+                        currentShip = 0;
+                        freeShipMsg.innerHTML = '<i class="bi bi-stars"></i> Đã áp dụng Free Ship (Hóa đơn > 1tr & Mua từ 2 SP)';
+                        freeShipMsg.className = "text-success small fw-bold d-block p-2 mt-2 bg-success bg-opacity-10 rounded border border-success border-opacity-25";
+                    } else {
+                        freeShipMsg.innerText = "Mua trên 1 triệu & từ 2 SP để được Freeship!";
+                        freeShipMsg.className = "text-muted small fst-italic mt-2 d-block";
+                    }
+
+                    if (pointsUsed) {
+                        currentShip = Math.max(0, currentShip - 10000);
+                        document.getElementById('form-use-points').value = 'true';
+                    } else {
+                        document.getElementById('form-use-points').value = 'false';
+                    }
+
+                    document.getElementById('shipping-fee').innerText = currentShip === 0 ? 'Miễn Phí' : formatCurrency(currentShip);
+
+                    let finalTotal = subtotal + currentShip - discountValue;
+                    if (finalTotal < 0) finalTotal = 0;
+
+                    document.getElementById('final-total').innerText = formatCurrency(finalTotal);
+                }
+
+                function applyDiscount() {
+                    const code = document.getElementById('discount-code').value.trim();
+                    const msg = document.getElementById('discount-msg');
+                    if (!code) {
+                        discountValue = 0;
+                        msg.innerText = "Vui lòng nhập mã khuyến mãi hoặc voucher.";
+                        msg.className = "text-danger fw-bold d-block mt-2";
+                        document.getElementById('form-discount-code').value = '';
+                        calculateCheckout();
+                        return;
+                    }
+                    // Validate voucher via backend
+                    fetch('/voucher/validate?code=' + encodeURIComponent(code))
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.valid) {
+                                discountValue = data.amount || 0;
+                                msg.innerText = `Áp dụng voucher: -${discountValue.toLocaleString('vi-VN')}đ`;
+                                msg.className = "text-success fw-bold d-block mt-2";
+                                document.getElementById('form-discount-code').value = code;
+                            } else {
+                                // Fallback to legacy SALE code
+                                if (code.toUpperCase() === 'SALE') {
+                                    discountValue = 50000;
+                                    msg.innerText = "Tuyệt vời! Bạn được giảm 50.000đ";
+                                    msg.className = "text-success fw-bold d-block mt-2";
+                                    document.getElementById('form-discount-code').value = 'SALE';
+                                } else {
+                                    discountValue = 0;
+                                    msg.innerText = data.message || "Mã không hợp lệ hoặc đã hết hạn.";
+                                    msg.className = "text-danger fw-bold d-block mt-2";
+                                    document.getElementById('form-discount-code').value = '';
+                                }
+                            }
+                            calculateCheckout();
+                        })
+                        .catch(err => {
+                            console.error('Error validating voucher', err);
+                            discountValue = 0;
+                            msg.innerText = 'Lỗi khi kiểm tra mã';
+                            msg.className = "text-danger fw-bold d-block mt-2";
+                            document.getElementById('form-discount-code').value = '';
+                            calculateCheckout();
+                        });
+                }
+
+                function usePoints() {
+                    pointsUsed = true;
+                    document.getElementById('btn-use-points').classList.add('d-none');
+                    calculateCheckout();
+                    alert("Thành công! Bạn đã đổi 10 điểm để giảm 10.000đ phí vận chuyển.");
+                }
+
+                function fetchPoints(phone) {
+                    if (!phone || phone.trim() === '') {
+                        accumulatedPoints = 0;
+                        pointsUsed = false;
+                        document.getElementById('form-use-points').value = 'false';
+                        calculateCheckout();
+                        return;
+                    }
+                    fetch('/order/points?phone=' + phone)
+                        .then(response => response.text())
+                        .then(data => {
+                            accumulatedPoints = parseInt(data) || 0;
+                            // Nếu SDT đổi qua sdt không đủ 10 đ, reset pointsUsed
+                            if (accumulatedPoints < 10 && pointsUsed) {
+                                pointsUsed = false;
+                                document.getElementById('form-use-points').value = 'false';
+                            }
+                            calculateCheckout();
+                        })
+                        .catch(error => {
+                            console.error('Error fetching points:', error);
+                            accumulatedPoints = 0;
+                            calculateCheckout();
+                        });
+                }
+
+                function processCheckout() {
+                    const form = document.querySelector('form[action="/order/submit"]');
+                    if (!form.checkValidity()) {
+                        form.reportValidity();
+                        return;
+                    }
+
+                    // Không cần kiểm tra MOMO để chặn lại nữa,
+                    // form.submit() sẽ gửi thẳng paymentMethod lên Spring MVC.
+                    // OrderController sẽ tự Redirect tới link API của Momo.
+                    document.getElementById('real-submit-btn').click();
+                }
+
+                // Gọi tính toán ngay khi load trang
+                calculateCheckout();
+                /*]]>*/
+            </script>
+        </div>
+        </div>
+    </section>
+</body>
+
+</html>

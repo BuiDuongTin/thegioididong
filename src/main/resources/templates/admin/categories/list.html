@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Danh Sách Danh Mục</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-warning text-dark py-3">
+                <h4 class="mb-0">Danh sách Danh mục</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <a href="/admin/categories/add" class="btn btn-warning fw-bold">Thêm Danh mục</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Nhóm</th>
+                                <th>Hình ảnh</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="category : ${categories}">
+                                <td th:text="${category.id}">1</td>
+                                <td th:text="${category.name}">Tên danh mục</td>
+                                <td th:text="${category.parentCategory != null ? category.parentCategory.name : ''}">
+                                    Nhóm</td>
+                                <td>
+                                    <img th:if="${category.image != null and category.image != ''}"
+                                        th:src="@{'/images/' + ${category.image}}" alt="Ảnh danh mục"
+                                        style="width: 50px; height: 50px; object-fit: contain;">
+                                </td>
+                                <td class="text-center">
+                                    <a th:href="@{/admin/categories/edit/{id}(id=${category.id})}"
+                                        class="btn btn-sm btn-outline-success">Edit</a>
+                                    <a th:href="@{/admin/categories/delete/{id}(id=${category.id})}"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">Delete</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(categories)}">
+                                <td colspan="5" class="text-center text-muted py-4">Chưa có danh mục nào</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

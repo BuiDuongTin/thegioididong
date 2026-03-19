@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+
+<head>
+    <title>Thêm Danh Mục Mới</title>
+</head>
+
+<body>
+    <section layout:fragment="content" class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-warning text-dark py-3">
+                        <h4 class="mb-0 text-center text-uppercase fw-bold">THÊM DANH MỤC MỚI</h4>
+                    </div>
+                    <div class="card-body p-4 bg-white">
+                        <form th:action="@{/admin/categories/add}" th:object="${category}" method="post"
+                            enctype="multipart/form-data">
+
+                            <!-- Tên danh mục -->
+                            <div class="mb-3">
+                                <label for="name" class="form-label fw-bold">Tên danh mục:</label>
+                                <input type="text" th:field="*{name}" class="form-control" id="name"
+                                    placeholder="Danh mục" required>
+                                <div class="text-danger" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                            </div>
+
+                            <!-- Nhóm danh mục cha -->
+                            <div class="mb-3">
+                                <label for="parentCategory" class="form-label fw-bold">Nhóm (Cho menu Phụ kiện):</label>
+                                <select th:field="*{parentCategory}" class="form-select" id="parentCategory">
+                                    <option value="">-- Không có nhóm (Là danh mục gốc) --</option>
+                                    <option th:each="cat : ${rootCategories}" th:value="${cat.id}"
+                                        th:text="${cat.name}"></option>
+                                </select>
+                                <small class="form-text text-muted">Chỉ chọn nếu danh mục này thuộc menu "Phụ kiện" hoặc
+                                    một danh mục tương tự.</small>
+                            </div>
+
+                            <!-- Icon -->
+                            <div class="mb-3">
+                                <label for="icon" class="form-label fw-bold">Icon (Bootstrap Icon - e.g.
+                                    bi-phone):</label>
+                                <input type="text" th:field="*{icon}" class="form-control" id="icon"
+                                    placeholder="bi-xxx">
+                            </div>
+
+                            <!-- Hình ảnh danh mục -->
+                            <div class="mb-4">
+                                <label for="imageFile" class="form-label fw-bold">Hình ảnh danh mục:</label>
+                                <input type="file" name="imageFile" class="form-control" id="imageFile"
+                                    accept="image/png, image/jpeg, image/gif">
+                                <small class="form-text text-muted">Chấp nhận ảnh JPG, PNG, GIF.</small>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <a href="/admin/categories" class="btn btn-secondary flex-grow-1">Hủy bỏ</a>
+                                <button type="submit" class="btn btn-danger flex-grow-1 fw-bold text-uppercase">LƯU DANH
+                                    MỤC</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>
