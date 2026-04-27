@@ -5,9 +5,11 @@ import com.hutech.buiduongtin.model.Order;
 import com.hutech.buiduongtin.model.OrderDetail;
 import com.hutech.buiduongtin.model.Product;
 import com.hutech.buiduongtin.model.User;
+import com.hutech.buiduongtin.model.enums.PaymentMethod;
 import com.hutech.buiduongtin.repository.OrderDetailRepository;
 import com.hutech.buiduongtin.repository.OrderRepository;
 import com.hutech.buiduongtin.repository.ProductRepository;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class OrderService {
@@ -32,6 +35,7 @@ public class OrderService {
             String discountCode, boolean usePoints, String paymentMethod) {
         List<CartItem> cartItems = cartService.getCartItems();
         if (cartItems.isEmpty()) {
+            log.warn("Checkout rejected because cart is empty for phone={}", phoneNumber);
             return null; // Handle empty cart
         }
 
@@ -88,6 +92,17 @@ public class OrderService {
         if (finalTotal < 0)
             finalTotal = 0;
 
+        log.info(
+                "Creating order for phone={} user={} items={} subtotal={} shippingFee={} discount={} pointsUsed={} paymentMethod={}",
+                phoneNumber,
+                currentUser != null ? currentUser.getUsername() : "guest",
+                cartItems.size(),
+                subtotal,
+                shippingFee,
+                discount,
+                pointsUsed,
+                PaymentMethod.fromCode(paymentMethod).code());
+
         Order order = new Order();
         order.setCustomerName(customerName);
         order.setShippingAddress(shippingAddress);
@@ -96,7 +111,7 @@ public class OrderService {
         order.setTotalPrice(finalTotal);
         order.setEarnedPoints(earnedPoints);
         order.setUsedPoints(pointsUsed);
-        order.setPaymentMethod(paymentMethod);
+        order.setPaymentMethod(PaymentMethod.fromCode(paymentMethod));
 
         if (currentUser != null) {
             order.setUser(currentUser);
@@ -124,10 +139,12 @@ public class OrderService {
                 int newStock = Math.max(0, currentStock - item.getQuantity());
                 product.setStockQuantity(newStock);
                 productRepository.save(product);
+                log.info("Stock updated for productId={} from {} to {}", product.getId(), currentStock, newStock);
             }
         }
 
         cartService.clearCart();
+        log.info("Order {} created successfully with total={}", savedOrder.getId(), savedOrder.getTotalPrice());
         return savedOrder;
     }
 }

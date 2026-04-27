@@ -1,6 +1,7 @@
 package com.hutech.buiduongtin.service;
 
 import com.hutech.buiduongtin.config.MomoConfig;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,13 +13,12 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import org.springframework.web.client.RestClientResponseException;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class MomoService {
     private final MomoConfig momoConfig;
@@ -64,21 +64,24 @@ public class MomoService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        log.info("Sending MoMo payment request for dbOrderId={} momoOrderId={} amount={}", dbOrderId, momoOrderId, amountStr);
 
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.postForObject(momoConfig.getEndpointUrl(), entity, Map.class);
 
             if (response != null && response.containsKey("payUrl")) {
+                log.info("MoMo payment URL generated successfully for dbOrderId={}", dbOrderId);
                 return response.get("payUrl").toString();
             }
+            log.warn("MoMo response missing payUrl for dbOrderId={}: {}", dbOrderId, response);
         } catch (RestClientResponseException e) {
-            System.err.println("MOMO API REQUEST FAILED!");
-            System.err.println("HTTP Status: " + e.getRawStatusCode());
-            System.err.println("Response Body: " + e.getResponseBodyAsString());
+            log.error("MoMo API request failed for dbOrderId={} status={} body={}",
+                    dbOrderId,
+                    e.getRawStatusCode(),
+                    e.getResponseBodyAsString());
         } catch (Exception e) {
-            System.err.println("Unknown Error during Momo API execution: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Unexpected MoMo error for dbOrderId={}", dbOrderId, e);
         }
 
         return null;

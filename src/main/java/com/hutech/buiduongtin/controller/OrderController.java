@@ -1,5 +1,6 @@
 package com.hutech.buiduongtin.controller;
 
+import com.hutech.buiduongtin.model.enums.PaymentMethod;
 import com.hutech.buiduongtin.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -34,7 +35,7 @@ public class OrderController {
         com.hutech.buiduongtin.model.Order savedOrder = orderService.createOrder(customerName, shippingAddress,
                 phoneNumber, note, discountCode, usePoints, paymentMethod);
 
-        if ("MOMO".equals(paymentMethod)) {
+        if (PaymentMethod.fromCode(paymentMethod) == PaymentMethod.MOMO) {
             try {
                 String payUrl = momoService.createPayment(
                         savedOrder.getId().toString(),

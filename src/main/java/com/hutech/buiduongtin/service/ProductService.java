@@ -1,23 +1,26 @@
 package com.hutech.buiduongtin.service;
 
 import com.hutech.buiduongtin.model.Product;
-import com.hutech.buiduongtin.repository.ProductRepository;
 import com.hutech.buiduongtin.repository.OrderDetailRepository;
+import com.hutech.buiduongtin.repository.ProductRepository;
+import com.hutech.buiduongtin.repository.specification.ProductSpecifications;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final OrderDetailRepository orderDetailRepository;
+    private final ImageStorageService imageStorageService;
 
     // Retrieve all products from the database
     public List<Product> getAllProducts() {
@@ -33,8 +37,9 @@ public class ProductService {
     }
 
     // Retrieve promotion products only
+    @Cacheable("promotionProducts")
     public List<Product> getPromotionProducts() {
-        return productRepository.findByPromotionTypeIn(java.util.Arrays.asList("DISCOUNT", "GIFT"));
+        return productRepository.findAll(ProductSpecifications.promotionOnly(true));
     }
 
     // Lọc sản phẩm theo danh mục (hỗ trợ cả cấp 1 và cấp 2)
@@ -49,16 +54,41 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
+    public Page<Product> searchProducts(String keyword, Long categoryId, Double minPrice, Double maxPrice,
+            Boolean promotionOnly, Boolean inStock, Pageable pageable) {
+        Specification<Product> specification = ProductSpecifications.withFilters(keyword, categoryId, minPrice,
+                maxPrice, promotionOnly, inStock);
+        return productRepository.findAll(specification, pageable);
+    }
+
+    public List<Product> getRelatedProducts(Long productId, Long categoryId, int limit) {
+        if (categoryId == null) {
+            return List.of();
+        }
+        int safeLimit = Math.min(Math.max(limit, 1), 20);
+        Pageable pageable = PageRequest.of(0, safeLimit, Sort.by(Sort.Direction.DESC, "id"));
+        return productRepository.findByCategoryIdAndIdNot(categoryId, productId, pageable).getContent();
+    }
+
+    public Page<Product> getProductsByCategory(Long categoryId, Pageable pageable) {
+        if (categoryId == null) {
+            return productRepository.findAll(pageable);
+        }
+        return productRepository.findPageByCategoryIdOrParentId(categoryId, pageable);
+    }
+
     // Add a new product to the database
+    @CacheEvict(value = "promotionProducts", allEntries = true)
     public Product addProduct(@NonNull Product product, MultipartFile imageFile) throws IOException {
         if (imageFile != null && !imageFile.isEmpty()) {
-            String imageFileName = saveImage(imageFile);
+            String imageFileName = imageStorageService.store(imageFile);
             product.setImage(imageFileName);
         }
         return productRepository.save(product);
     }
 
     // Update an existing product
+    @CacheEvict(value = "promotionProducts", allEntries = true)
     public Product updateProduct(@NotNull Product product, MultipartFile imageFile) throws IOException {
         Long id = product.getId();
         if (id == null) {
@@ -79,7 +109,7 @@ public class ProductService {
         existingProduct.setStockQuantity(product.getStockQuantity());
 
         if (imageFile != null && !imageFile.isEmpty()) {
-            String imageFileName = saveImage(imageFile);
+            String imageFileName = imageStorageService.store(imageFile);
             existingProduct.setImage(imageFileName);
         }
 
@@ -98,28 +128,12 @@ public class ProductService {
     }
 
     // Delete a product by its id
+    @CacheEvict(value = "promotionProducts", allEntries = true)
     public void deleteProductById(@NonNull Long id) {
         if (!productRepository.existsById(id)) {
             throw new IllegalStateException("Product with ID " + id + " does not exist.");
         }
         orderDetailRepository.deleteByProductId(id);
         productRepository.deleteById(id);
-    }
-
-    // Helper method to save the image file
-    private String saveImage(MultipartFile imageFile) throws IOException {
-        String uploadDir = "src/main/resources/static/images/";
-        Path uploadPath = Paths.get(uploadDir);
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
-
-        Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        return fileName;
     }
 }

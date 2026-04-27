@@ -3,6 +3,7 @@ package com.hutech.buiduongtin;
 import com.hutech.buiduongtin.model.Category;
 import com.hutech.buiduongtin.model.Product;
 import com.hutech.buiduongtin.model.Role;
+import com.hutech.buiduongtin.model.enums.PromotionType;
 import com.hutech.buiduongtin.repository.CategoryRepository;
 import com.hutech.buiduongtin.repository.OrderDetailRepository;
 import com.hutech.buiduongtin.repository.OrderRepository;
@@ -250,7 +251,7 @@ public class DataInitializer implements CommandLineRunner {
         p.setDescription(desc);
         p.setImage(image);
         p.setCategory(cat);
-        p.setPromotionType(isPromotion ? "DISCOUNT" : "NONE");
+        p.setPromotionType(isPromotion ? PromotionType.DISCOUNT : PromotionType.NONE);
         p.setDiscountPercent(discount);
         p.setStockQuantity(50); // Số lượng mặc định khi seed dữ liệu
         return p;

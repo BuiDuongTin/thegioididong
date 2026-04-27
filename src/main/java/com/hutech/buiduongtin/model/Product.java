@@ -1,5 +1,6 @@
 package com.hutech.buiduongtin.model;
 
+import com.hutech.buiduongtin.model.enums.PromotionType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,7 +9,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_products_category_id", columnList = "category_id"),
+        @Index(name = "idx_products_promotion_type", columnList = "promotion_type")
+})
 public class Product {
 
     @Id
@@ -40,14 +44,32 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @PrePersist
+    @PreUpdate
+    private void normalizePromotionType() {
+        this.promotionType = PromotionType.fromCode(this.promotionType).code();
+    }
+
+    public PromotionType getPromotionTypeEnum() {
+        return PromotionType.fromCode(promotionType);
+    }
+
+    public void setPromotionType(String promotionType) {
+        this.promotionType = PromotionType.fromCode(promotionType).code();
+    }
+
+    public void setPromotionType(PromotionType promotionType) {
+        this.promotionType = promotionType == null ? PromotionType.NONE.code() : promotionType.code();
+    }
+
     // Helper: kiểm tra có khuyến mãi không (tương thích template cũ)
     public boolean isPromotion() {
-        return "DISCOUNT".equals(promotionType) || "GIFT".equals(promotionType);
+        return getPromotionTypeEnum().isActive();
     }
 
     // Helper: Tính giá trị thực tế sau khi áp dụng các quyền lợi giảm giá
     public double getRealPrice() {
-        if ("DISCOUNT".equals(promotionType) && discountPercent > 0) {
+        if (getPromotionTypeEnum() == PromotionType.DISCOUNT && discountPercent > 0) {
             return price - (price * discountPercent / 100.0);
         }
         return price;

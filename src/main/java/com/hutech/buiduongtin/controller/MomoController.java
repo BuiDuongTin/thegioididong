@@ -1,6 +1,7 @@
 package com.hutech.buiduongtin.controller;
 
 import com.hutech.buiduongtin.model.Order;
+import com.hutech.buiduongtin.model.enums.PaymentStatus;
 import com.hutech.buiduongtin.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -36,7 +37,7 @@ public class MomoController {
                 Long id = Long.parseLong(dbOrderIdStr);
                 Order order = orderRepository.findById(id).orElse(null);
                 if (order != null) {
-                    order.setPaymentStatus("PAID");
+                    order.setPaymentStatus(PaymentStatus.PAID);
                     orderRepository.save(order);
                     redirectAttributes.addFlashAttribute("order", order);
                     return "redirect:/order/confirmation";
@@ -63,8 +64,8 @@ public class MomoController {
                 }
                 Long id = Long.parseLong(dbOrderIdStr);
                 Order order = orderRepository.findById(id).orElse(null);
-                if (order != null && !"PAID".equals(order.getPaymentStatus())) {
-                    order.setPaymentStatus("PAID");
+                if (order != null && order.getPaymentStatusEnum() != PaymentStatus.PAID) {
+                    order.setPaymentStatus(PaymentStatus.PAID);
                     orderRepository.save(order);
                 }
             } catch (Exception e) {
